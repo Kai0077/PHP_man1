@@ -1,172 +1,140 @@
-<?php
+<?php 
 
-require_once 'Database.php';
-require_once 'Department.php';
-require_once 'Logger.php';
-
-Class Employee extends Database
+Class Employee 
 {
+    private int $id;
+    
+    private string $firstName;
 
-    /**
-     * It retrieves all employees from the database
-     * @return An associative array with employee information,
-     *         or false if there was an error
-     */
-    function getAll(): array|false
+    private string $lastName;
+
+    private string $email;
+
+    private DateTime $birthDate;
+
+    private ?int $departmentId;
+
+    private ?string $departmentName;
+
+    private ?int $projectId;
+
+    private ?string $projectName;
+
+    public function __construct(
+        int $id,
+        string $firstName,
+        string $lastName,
+        string $email,
+        DateTime $birthDate,
+        ?int $departmentId = null,
+        ?string $departmentName = null,
+        ?int $projectId = null,
+        ?string $projectName = null
+    )
     {
-        $sql =<<<SQL
-            SELECT nEmployeeID, cFirstName, cLastName, dBirth
-            FROM employee
-            ORDER BY cFirstName, cLastName;
-        SQL;
-
-        try {
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute();
-            
-            return $stmt->fetchAll();
-        } catch (PDOException $e) {
-            Logger::logText('Error getting all employees: ', $e);
-            return false;
-        }
+        $this->id = $id;
+        $this->firstName = $firstName;
+        $this->lastName = $lastName;
+        $this->email = $email;
+        $this->birthDate = $birthDate;
+        $this->departmentId = $departmentId;
+        $this->departmentName = $departmentName;
+        $this->projectId = $projectId;
+        $this->projectName = $projectName;
     }
 
-    /**
-     * It retrieves employees from the database based 
-     * on a text search on the first and last name
-     * @param $searchText The text to search in the database
-     * @return An associative array with employee information,
-     *         or false if there was an error
-     */
-    function search(string $searchText): array|false
+    public function setId(int $id):void
     {
-        $sql =<<<SQL
-            SELECT nEmployeeID, cFirstName, cLastName, dBirth
-            FROM employee
-            WHERE cFirstName LIKE :firstName
-            OR cLastName LIKE :lastName
-            ORDER BY cFirstName, cLastName;
-        SQL;
+        $this->id = $id;
+    } 
 
-        try {
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->bindValue(':firstName', "%$searchText%");
-            $stmt->bindValue(':lastName', "%$searchText%");
-            $stmt->execute();
-            
-            return $stmt->fetchAll();
-        } catch (PDOException $e) {
-            Logger::logText('Error searching for employees: ', $e);
-            return false;
-        }
+    public function setFirstName(string $fistName):void
+    {
+        $this->firstName = $fistName;
+    } 
+
+    public function setLastName(string $lastName):void
+    {
+        $this->lastName = $lastName;
+    } 
+
+    public function setEmail(string $email):void
+    {
+        $this->email = $email;
+    } 
+
+    public function setBirthDate(DateTime $birthDate):void
+    {
+        $this->birthDate = $birthDate;
+    } 
+
+    public function setDepartmantId(?int $departmentId):void
+    {
+        $this->departmentId = $departmentId;
+    } 
+
+    public function setDepartmentName(?string $departmentName):void
+    {
+        $this->departmentName = $departmentName;
+    } 
+
+    public function setProjectId(?int $projectId):void
+    {
+        $this->projectId = $projectId;
+    } 
+
+    public function setProjectName(?string $projectName):void
+    {
+        $this->projectName = $projectName;
+    } 
+    
+
+    public function getId():int
+    {
+        return $this->id;
+    } 
+
+    public function getFirstName(): string
+    {
+        return $this->firstName;
     }
 
-    /**
-     * It retrieves information of an employee
-     * @param $employeeID The ID of the employee
-     * @return An associative array with employee information,
-     *         or false if there was an error
-     */
-    function getByID(int $employeeID): array|false
+    public function getLastName(): string
     {
-        $sql =<<<SQL
-            SELECT 
-                employee.cFirstName AS first_name, 
-                employee.cLastName AS last_name, 
-                employee.cEmail AS email, 
-                employee.dBirth AS birth_date, 
-                employee.nDepartmentID AS department_id, 
-                department.cName AS department_name
-            FROM employee INNER JOIN department
-                ON employee.nDepartmentID = department.nDepartmentID
-            WHERE nEmployeeID = :employeeID;
-        SQL;
-
-        try {
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->bindValue(':employeeID', $employeeID);
-            $stmt->execute();
-            
-            return $stmt->fetchAll();
-        } catch (PDOException $e) {
-            Logger::logText('Error retrieving employee information: ', $e);
-            return false;
-        }
+        return $this->lastName;
     }
 
-    /**
-     * It validates employee data before putting it into the database
-     * @param $employee Employee data in an associative array
-     * @return<array> An array with all validation error messages
-     */
-    function validate(array $employee): array
+    public function getEmail(): string
     {
-        $firstName = trim($employee['first_name'] ?? '');
-        $lastName = trim($employee['last_name'] ?? '');
-        $email = trim($employee['email'] ?? '');
-        $birthDate = trim($employee['birth_date'] ?? '');
-        $departmentID = (int) ($employee['department'] ?? 0);
-        
-        $validationErrors = [];
-        
-        if ($firstName === '') {
-            $validationErrors[] = 'First name is mandatory.';
-        }
-        if ($lastName === '') {
-            $validationErrors[] = 'Last name is mandatory.';
-        }
-        if ($email === '') {
-            $validationErrors[] = 'Email is mandatory.';
-        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $validationErrors[] = 'Invalid email format.';
-        }
-        if ($birthDate === '') {
-            $validationErrors[] = 'Birth date is mandatory.';
-        } elseif (!DateTime::createFromFormat('Y-m-d', $birthDate)) {
-            $validationErrors[] = 'Invalid birth date format.';
-        } elseif (DateTime::createFromFormat('Y-m-d', $birthDate) > new DateTime('-16 years')) {
-            $validationErrors[] = 'The employee must be at least 16 years old.';
-        }
-        if ($departmentID === 0) {
-            $validationErrors[] = 'Department is mandatory.';
-        } else {
-            $department = new Department();
-            if (!$department->getByID($departmentID)) {
-                $validationErrors[] = 'The department does not exist.';
-            }
-        }
-        
-        return $validationErrors;
+        return $this->email;
     }
 
-    /**
-     * It inserts a new employee in the database
-     * @param $employee An associative array with employee information
-     * @return true if the insert was successful,
-     *         or false if there was an error
-     */
-    function insert(array $employee): bool
+    public function getBirthDate(): DateTime
     {
-        $sql =<<<SQL
-            INSERT INTO employee
-                (cFirstName, cLastName, cEmail, dBirth, nDepartmentID)
-            VALUES
-                (:firstName, :lastName, :email, :birthDate, :departmentID);
-        SQL;
-
-        try {
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->bindValue(':firstName', $employee['first_name']);
-            $stmt->bindValue(':lastName', $employee['last_name']);
-            $stmt->bindValue(':email', $employee['email']);
-            $stmt->bindValue(':birthDate', $employee['birth_date']);
-            $stmt->bindValue(':departmentID', $employee['department']);
-            $stmt->execute();
-            
-            return $stmt->rowCount() === 1;
-        } catch (PDOException $e) {
-            Logger::logText('Error inserting a new employee: ', $e);
-            return false;
-        }
+        return $this->birthDate;
     }
+
+    public function getDepartmentId(): ?int
+    {
+        return $this->departmentId;
+    }
+
+    public function getDepartmentName(): ?string
+    {
+        return $this->departmentName;
+    }
+
+    public function getProjectId(): ?int
+    {
+        return $this->projectId;
+    }
+
+    public function getProjectName(): ?string
+    {
+        return $this->projectName;
+    }
+
+
+
+
 }

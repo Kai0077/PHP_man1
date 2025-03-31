@@ -10,19 +10,25 @@ $employeeDB = new EmployeeDB();
 $departmentDB = new DepartmentDatabase();
 $departments = $departmentDB->getAll();
 
+$employeeID = (int) ($_GET['id'] ?? 0);
+$employee = $employeeDB->getById($employeeID);
+
+$departmentDB = new DepartmentDatabase();
+$departments = $departmentDB->getAll();
+
+if (!$employee || !$departments) {
+    $errorMessage = 'Unable to load employee or department data.';
+}
+
 $formData = [
-    'first_name' => '',
-    'last_name' => '',
-    'email' => '',
-    'birth_date' => '',
-    'department_id' => 0
+    'first_name' => $employee->getFirstName(),
+    'last_name' => $employee->getLastName(),
+    'email' => $employee->getEmail(),
+    'birth_date' => $employee->getBirthDate()->format('Y-m-d'),
+    'department_id' => $employee->getDepartmentId()
 ];
 
 $errors = [];
-
-if (!$departments) {
-    $errorMessage = 'There was an error retrieving the department list.';
-}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $formData = [
@@ -36,16 +42,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $errors = $employeeDB->validate($formData);
 
     if (empty($errors)) {
-        if ($employeeDB->insert($formData)) {
+        if ($employeeDB->update($employeeID, $formData)) {
             header('Location: index.php');
             exit;
         } else {
-            $errorMessage = 'Unable to add new employee.';
+            $errorMessage = 'Unable to update employee.';
         }
     }
 }
 
-$pageTitle = 'Add Employee';
+$pageTitle = 'Edit Employee';
 include_once ROOT_PATH . '/public/header.php';
 include_once ROOT_PATH . '/public/nav.php';
 
@@ -58,23 +64,21 @@ include_once ROOT_PATH . '/public/nav.php';
 </nav>
 
 <main>
-    <h1>Add Employee</h1>
+    <h1>Edit Employee</h1>
 
     <?php if (!empty($errorMessage)): ?>
         <p class="error"><?= htmlspecialchars($errorMessage) ?></p>
     <?php endif; ?>
 
     <?php if (!empty($errors)): ?>
-        <div class="error-list">
-            <ul>
-                <?php foreach ($errors as $error): ?>
-                    <li><?= htmlspecialchars($error) ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
+        <ul class="error-list">
+            <?php foreach ($errors as $error): ?>
+                <li><?= htmlspecialchars($error) ?></li>
+            <?php endforeach; ?>
+        </ul>
     <?php endif; ?>
 
-    <form action="new.php" method="POST">
+    <form action="update.php?id=<?= $employeeID ?>" method="POST">
         <div>
             <label for="first_name">First Name</label>
             <input type="text" id="first_name" name="first_name"
@@ -100,8 +104,8 @@ include_once ROOT_PATH . '/public/nav.php';
         </div>
 
         <div>
-            <label for="department_id">Department</label>
-            <select name="department_id" id="department_id" required>
+            <label for="department">Department</label>
+            <select name="department_id" id="department" required>
                 <option value="">Select a department</option>
                 <?php foreach ($departments as $dept): ?>
                     <option value="<?= $dept->getId() ?>"
@@ -113,7 +117,7 @@ include_once ROOT_PATH . '/public/nav.php';
         </div>
 
         <div>
-            <button type="submit">Submit</button>
+            <button type="submit">Save Changes</button>
         </div>
     </form>
 </main>

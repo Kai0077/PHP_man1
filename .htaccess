@@ -1,0 +1,9 @@
+Options -Indexes
+
+<FilesMatch "^(classes|interfaces|css|data|log|views|img)">
+    Deny from all
+</FilesMatch>
+
+<FilesMatch "^(\.gitignore|\.htaccess|README\.md)">
+    Deny from all
+</FilesMatch>

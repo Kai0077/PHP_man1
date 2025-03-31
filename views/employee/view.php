@@ -9,16 +9,14 @@ if ($employeeID === 0) {
     exit;
 }
 
-require_once ROOT_PATH . '/classes/Employee.php';
+require_once ROOT_PATH . '/classes/EmployeeDatabase.php';
 
-$employee = new Employee();
-$employee = $employee->getByID($employeeID);
+$employeeDB = new EmployeeDB();
+$employee = $employeeDB->getByID($employeeID);
 
 if (!$employee) {
     $errorMessage = 'There was an error retrieving employee information.';
-} else {
-    $employee = $employee[0];
-}
+} 
 
 $pageTitle = 'View Employee';
 include_once ROOT_PATH . '/public/header.php';
@@ -36,11 +34,11 @@ include_once ROOT_PATH . '/public/header.php';
                 <p class="error"><?=$errorMessage ?></p>
             </section>
         <?php else: ?>
-            <p><strong>First name: </strong><?=$employee['first_name'] ?></p>
-            <p><strong>Last name: </strong><?=$employee['last_name'] ?></p>
-            <p><strong>Email: </strong><?=$employee['email'] ?></p>
-            <p><strong>Birth date: </strong><?=$employee['birth_date'] ?></p>
-            <p><strong>Department: </strong><?=$employee['department_name'] ?></p>
+            <p><strong>First name: </strong><?=$employee->getFirstName() ?></p>
+            <p><strong>Last name: </strong><?=$employee->getLastName() ?></p>
+            <p><strong>Email: </strong><?=$employee->getEmail() ?></p>
+            <p><strong>Birth date: </strong><?=$employee->getBirthDate()->format('Y-m-d') ?></p>
+            <p><strong>Department: </strong><?=$employee->getDepartmentName() ?></p>
         <?php endif; ?>
     </main>
 
