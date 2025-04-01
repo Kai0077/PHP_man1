@@ -1,76 +1,89 @@
 <?php
 
+// Load setup file and classes needed to work with departments
 require_once '../../initialise.php';
-
 require_once ROOT_PATH . '/classes/Department.php';
 require_once ROOT_PATH . '/classes/DepartmentDatabase.php';
 
+// Create a new department database object
 $departmentDB = new DepartmentDatabase();
 
-$formData = [
-    'name' => ''
-];
-$errors = [];
+// Get the search text from the URL (if available), or use an empty string
+$searchText = trim($_GET['search'] ?? '');
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $formData['name'] = trim($_POST['name'] ?? '');
-
-    if ($formData['name'] === '') {
-        $errors[] = 'Department name is required.';
-    }
-
-    if (empty($errors)) {
-        $newDepartment = new Department(
-            id: 0, 
-            name: $formData['name']
-        );
-
-        if ($departmentDB->insert($newDepartment)) {
-            header('Location: index.php');
-            exit;
-        } else {
-            $errorMessage = 'Failed to add new department.';
-        }
-    }
+// If no search text, get all departments
+if ($searchText === '') {
+    $departments = $departmentDB->getAll();
+} else {
+    // Otherwise, search for departments by name
+    $departments = $departmentDB->search($searchText);
 }
 
-$pageTitle = 'Add Department';
+// If something went wrong when getting departments, set an error message
+if ($departments === false) {
+    $errorMessage = 'There was an error retrieving the list of departments.';
+}
+
+// Set the page title and load the page header and navigation
+$pageTitle = 'Departments';
 include_once ROOT_PATH . '/public/header.php';
 include_once ROOT_PATH . '/public/nav.php';
 
 ?>
 
-<nav>
-    <ul>
-        <li><a href="index.php">Back to Departments</a></li>
-    </ul>
-</nav>
-
 <main>
-    <h1>Add Department</h1>
 
+    <!-- Search form -->
+    <section class="search-bar">
+        <form action="index.php" method="get">
+            <label for="search">Search:</label>
+            <input type="search" id="search" name="search" 
+                   value="<?= htmlspecialchars($searchText) ?>" 
+                   placeholder="Enter department name">
+            <button type="submit">Search</button>
+        </form>
+    </section>
+
+    <!-- Button to go to the 'Add New Department' page -->
+    <section class="action-bar" style="margin-top: 1em;">
+        <form action="new.php" method="get">
+            <button type="submit">Add New Department</button>
+        </form>
+    </section>
+
+    <!-- Show error message if something went wrong -->
     <?php if (!empty($errorMessage)): ?>
         <p class="error"><?= htmlspecialchars($errorMessage) ?></p>
     <?php endif; ?>
 
-    <?php if (!empty($errors)): ?>
-        <ul class="error-list">
-            <?php foreach ($errors as $error): ?>
-                <li><?= htmlspecialchars($error) ?></li>
-            <?php endforeach; ?>
-        </ul>
+    <!-- If there are no departments, show a message -->
+    <?php if (empty($departments)): ?>
+        <p>No departments found.</p>
+    <?php else: ?>
+        <!-- Show the departments in a table -->
+        <table border="1" cellpadding="10" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Loop through each department and show its name and actions -->
+                <?php foreach ($departments as $department): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($department->getName()) ?></td>
+                        <td>
+                            <a href="view.php?id=<?= $department->getId() ?>">View</a> |
+                            <a href="update.php?id=<?= $department->getId() ?>">Edit</a> |
+                            <a href="delete.php?id=<?= $department->getId() ?>">Delete</a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
     <?php endif; ?>
-
-    <form action="new.php" method="POST">
-        <div>
-            <label for="name">Department Name</label>
-            <input type="text" id="name" name="name" value="<?= htmlspecialchars($formData['name']) ?>" required>
-        </div>
-
-        <div>
-            <button type="submit">Create Department</button>
-        </div>
-    </form>
 </main>
 
+<!-- Include the footer at the bottom of the page -->
 <?php include_once ROOT_PATH . '/public/footer.php'; ?>
