@@ -1,6 +1,5 @@
 <?php
 
-// Load setup file and classes needed to work with departments
 require_once '../../initialise.php';
 require_once ROOT_PATH . '/classes/Department.php';
 require_once ROOT_PATH . '/classes/DepartmentDatabase.php';
