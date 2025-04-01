@@ -9,7 +9,7 @@ Class EmployeeDB extends Database
 
     /**
      * It retrieves all employees from the database
-     * @return An associative array with employee information,
+     * return  an associative array with employee information,
      *         or false if there was an error
      */
     public function getAll(): array|false
